@@ -38,7 +38,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	normal_distribution<double> dist_theta(theta, std[2]);
 
 	// Set number of particles
-	num_particles = 1;
+	num_particles = 10;
 
 	// Initialize particles and weights.
 	for (int idx = 0; idx < num_particles; idx++) {
@@ -136,8 +136,8 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 			}
 			
 		}
-		cout << "Observation: " << observations[idx].x << ", " << observations[idx].y << " Id: " << observations[idx].id << endl;
-		cout << "Landmark: " << nearestLM.x << ", " << nearestLM.y << " Id: " << nearestLM.id << endl;
+		//cout << "Observation: " << idx << " " << observations[idx].x << ", " << observations[idx].y << " Id: " << observations[idx].id << endl;
+		//cout << "Landmark: " << idx << " " << nearestLM.x << ", " << nearestLM.y << " Id: " << nearestLM.id << endl;
 	}
 
 	//cout << "Associated.." << endl;
@@ -195,19 +195,9 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			LandmarkObs obstrans;
 			obs = observations[jdx];
 
-			//if (particles[idx].theta > 0) {
-				// Counter clockwise
-				// Perform transformation
-				obstrans.x = particles[idx].x + ((obs.x * cos(particles[idx].theta)) - (obs.y * sin(particles[idx].theta)));
-				obstrans.y = particles[idx].y + ((obs.x * sin(particles[idx].theta)) + (obs.y * cos(particles[idx].theta)));
-			//}
-			//else {
-				// Clockwise
-				// Perform transformation
-				//obstrans.x = particles[idx].x + ((obs.x * cos(particles[idx].theta)) + (obs.y * sin(particles[idx].theta)));
-				//obstrans.y = particles[idx].y - ((obs.x * sin(particles[idx].theta)) + (obs.y * cos(particles[idx].theta)));
-			//}
-			
+			// Create a vector of transformed observations
+			obstrans.x = particles[idx].x + ((obs.x * cos(particles[idx].theta)) - (obs.y * sin(particles[idx].theta)));
+			obstrans.y = particles[idx].y + ((obs.x * sin(particles[idx].theta)) + (obs.y * cos(particles[idx].theta)));
 			obstrans.id = observations[jdx].id;
 			map_observations.push_back(obstrans);
 						
@@ -225,18 +215,23 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			// For all landmarks
 			for (int kdx = 0; kdx < map_inrangelandmarks.size(); kdx++) {
 
-				// Calculate probability
-				double normalizer = 1.0 / (2.0 * M_PI * std_landmark[0] * std_landmark[1]);
-				//cout << "Norm: " << normalizer << endl;
-				double xterm = pow((map_observations[jdx].x - map_inrangelandmarks[kdx].x) / std_landmark[0], 2) / 2.0;
-				//cout << "x: " << xterm << endl;
-				double yterm = pow((map_observations[jdx].y - map_inrangelandmarks[kdx].y) / std_landmark[1], 2) / 2.0;
-				//cout << "y: " << yterm << endl;
-				double probw = normalizer * exp(-(xterm + yterm));
-				//cout << "p: " << probw << endl;
-				particles[idx].weight *= probw;
-				weights[idx] = particles[idx].weight;
+				// Check matching pairs of (observations, landmarks) for which we should calculate probability
+				if (map_observations[jdx].id == map_inrangelandmarks[kdx].id) {
 
+					// Calculate probability
+					double normalizer = 1.0 / (2.0 * M_PI * std_landmark[0] * std_landmark[1]);
+					//cout << "Norm: " << normalizer << endl;
+					double xterm = pow((map_observations[jdx].x - map_inrangelandmarks[kdx].x) / std_landmark[0], 2) / 2.0;
+					//cout << "xdiff: " << (map_observations[jdx].x - map_inrangelandmarks[kdx].x) << endl;
+					double yterm = pow((map_observations[jdx].y - map_inrangelandmarks[kdx].y) / std_landmark[1], 2) / 2.0;
+					//cout << "ydiff: " << (map_observations[jdx].y - map_inrangelandmarks[kdx].y) << endl;
+					double probw = normalizer * exp(-(xterm + yterm));
+					//cout << "eterm: " << -(xterm + yterm) << endl;
+					particles[idx].weight *= probw;
+					weights[idx] = particles[idx].weight;
+
+				}
+				
 			}
 			// Create vectors for associations, sense_x and sense_y
 			associations.push_back(map_observations[jdx].id);
@@ -244,10 +239,8 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			sense_y.push_back(map_observations[jdx].y);
 		}
 		// Assign particle associations, sense_x and sense_y based on vectors
-		particles[idx].associations = associations;
-		particles[idx].sense_x = sense_x;
-		particles[idx].sense_y = sense_y;
-		// cout << "p" << idx << ": " << particles[idx].weight << endl;
+		SetAssociations(particles[idx], associations, sense_x, sense_y);
+		//cout << "p" << idx << ": " << particles[idx].weight << endl;
 	}
 	//cout << "Updated.." << endl;
 }
@@ -285,9 +278,17 @@ Particle ParticleFilter::SetAssociations(Particle& particle, const std::vector<i
     // sense_x: the associations x mapping already converted to world coordinates
     // sense_y: the associations y mapping already converted to world coordinates
 
+	// Clear
+	particle.associations.clear();
+	particle.sense_x.clear();
+	particle.sense_y.clear();
+
+	//Assign
     particle.associations= associations;
     particle.sense_x = sense_x;
     particle.sense_y = sense_y;
+
+	return particle;
 }
 
 string ParticleFilter::getAssociations(Particle best)

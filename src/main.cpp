@@ -50,10 +50,10 @@ int main()
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
-
+	  
     if (length && length > 2 && data[0] == '4' && data[1] == '2')
     {
-
+	  
       auto s = hasData(std::string(data));
       if (s != "") {
       	
@@ -63,7 +63,7 @@ int main()
         
         if (event == "telemetry") {
           // j[1] is the data JSON object
-
+		  
 
           if (!pf.initialized()) {
 
@@ -78,7 +78,6 @@ int main()
 			// Predict the vehicle's next state from previous (noiseless control) data.
 		  	double previous_velocity = std::stod(j[1]["previous_velocity"].get<std::string>());
 			double previous_yawrate = std::stod(j[1]["previous_yawrate"].get<std::string>());
-
 			pf.prediction(delta_t, sigma_pos, previous_velocity, previous_yawrate);
 		  }
 
@@ -134,14 +133,14 @@ int main()
           msgJson["best_particle_x"] = best_particle.x;
           msgJson["best_particle_y"] = best_particle.y;
           msgJson["best_particle_theta"] = best_particle.theta;
-
+		  
           //Optional message data used for debugging particle's sensing and associations
           msgJson["best_particle_associations"] = pf.getAssociations(best_particle);
           msgJson["best_particle_sense_x"] = pf.getSenseX(best_particle);
           msgJson["best_particle_sense_y"] = pf.getSenseY(best_particle);
-
+		  
           auto msg = "42[\"best_particle\"," + msgJson.dump() + "]";
-          // std::cout << msg << std::endl;
+          //std::cout << msg << std::endl;
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
 	  
         }
