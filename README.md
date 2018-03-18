@@ -40,3 +40,11 @@ For the simulator, set associations to the mapped ids, and sense_x and sense_y t
 
 #### 4. Resampling
 Once we have the new weights, we will resample from this set for the next step. Resampling is choosing particles from the existing step for the next time step proportional to their weights.
+
+#### Links that helped:
+https://youtu.be/-3HI3Iw3Z9g
+https://discussions.udacity.com/t/updating-weights-reinitialize-to-1-every-time/635524/5
+https://discussions.udacity.com/t/code-stuck-after-1-update-issue-with-updating-associations-sense-x-and-sense-y/636212/2
+https://discussions.udacity.com/t/drifting-from-ground-truth/636371/2
+
+
