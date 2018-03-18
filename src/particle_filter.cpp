@@ -38,7 +38,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	normal_distribution<double> dist_theta(theta, std[2]);
 
 	// Set number of particles
-	num_particles = 100;
+	num_particles = 10;
 
 	// Initialize particles and weights.
 	for (int idx = 0; idx < num_particles; idx++) {
@@ -132,7 +132,6 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 			{
 				minDist = distDiff;
 				observations[idx].id = predicted[jdx].id;
-
 			}
 
 		}
@@ -215,23 +214,28 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			for (int kdx = 0; kdx < map_inrangelandmarks.size(); kdx++) {
 
 				// Calculate probability
-				long double normalizer = 1.0 / (2.0 * M_PI * std_landmark[0] * std_landmark[1]);
-				long double xterm = pow((map_observations[jdx].x - map_inrangelandmarks[kdx].x) / std_landmark[0], 2) / 2.0;
-				long double yterm = pow((map_observations[jdx].y - map_inrangelandmarks[kdx].y) / std_landmark[1], 2) / 2.0;
-				long double probw = normalizer * exp(-(xterm + yterm));
+				double normalizer = 1.0 / (2.0 * M_PI * std_landmark[0] * std_landmark[1]);
+				//cout << "Norm: " << normalizer << endl;
+				double xterm = pow((map_observations[jdx].x - map_inrangelandmarks[kdx].x) / std_landmark[0], 2) / 2.0;
+				//cout << "x: " << xterm << endl;
+				double yterm = pow((map_observations[jdx].y - map_inrangelandmarks[kdx].y) / std_landmark[1], 2) / 2.0;
+				//cout << "y: " << yterm << endl;
+				double probw = normalizer * exp(-(xterm + yterm));
+				//cout << "p: " << probw << endl;
 				particles[idx].weight *= probw;
 				weights[idx] = particles[idx].weight;
 
 			}
-			
+			// Create vectors for associations, sense_x and sense_y
 			associations.push_back(map_observations[jdx].id);
 			sense_x.push_back(map_observations[jdx].x);
 			sense_y.push_back(map_observations[jdx].y);
 		}
+		// Assign particle associations, sense_x and sense_y based on vectors
 		particles[idx].associations = associations;
 		particles[idx].sense_x = sense_x;
 		particles[idx].sense_y = sense_y;
-
+		// cout << "p" << idx << ": " << particles[idx].weight << endl;
 	}
 	cout << "Updated.." << endl;
 }
@@ -242,7 +246,7 @@ void ParticleFilter::resample() {
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
 
 	cout << "Resampling.." << endl;
-
+			
 	// Initialize random engine.
 	default_random_engine gen;
 
