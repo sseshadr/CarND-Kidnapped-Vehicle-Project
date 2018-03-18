@@ -38,7 +38,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	normal_distribution<double> dist_theta(theta, std[2]);
 
 	// Set number of particles
-	num_particles = 10;
+	num_particles = 1;
 
 	// Initialize particles and weights.
 	for (int idx = 0; idx < num_particles; idx++) {
@@ -67,7 +67,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	// NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
-	cout << "Predicting.." << endl;
+	//cout << "Predicting.." << endl;
 	// Initialize random engine.
 	default_random_engine gen;
 
@@ -105,7 +105,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 		particles[idx].theta = dist_theta(gen);
 
 	}
-	cout << "Predicted.." << endl;
+	//cout << "Predicted.." << endl;
 }
 
 void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
@@ -117,10 +117,10 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 	//cout << "Associating.." << endl;
 
 	// Init min to max double for running minimum
-	double minDist = numeric_limits<double>::max();
+	LandmarkObs nearestLM;
 
 	for (int idx = 0; idx < observations.size(); idx++) {
-
+		double minDist = numeric_limits<double>::max();
 		for (int jdx = 0; jdx < predicted.size(); jdx++) {
 
 			// Calculate distance to all landmarks
@@ -132,10 +132,12 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 			{
 				minDist = distDiff;
 				observations[idx].id = predicted[jdx].id;
+				nearestLM = predicted[jdx];
 			}
-
+			
 		}
-
+		cout << "Observation: " << observations[idx].x << ", " << observations[idx].y << " Id: " << observations[idx].id << endl;
+		cout << "Landmark: " << nearestLM.x << ", " << nearestLM.y << " Id: " << nearestLM.id << endl;
 	}
 
 	//cout << "Associated.." << endl;
@@ -155,7 +157,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	//   3.33
 	//   http://planning.cs.uiuc.edu/node99.html
 
-	cout << "Updating.." << endl;
+	//cout << "Updating.." << endl;
 		
 	for (int idx = 0; idx < num_particles; idx++) {
 
@@ -181,7 +183,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 		}
 		
 		
-		// Map observations to map coordinates
+		// Transform observations to map coordinates
 		vector<LandmarkObs> map_observations;
 		LandmarkObs obs;
 		vector<int> associations;
@@ -193,9 +195,19 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			LandmarkObs obstrans;
 			obs = observations[jdx];
 
-			// Perform transformation
-			obstrans.x = particles[idx].x + ((obs.x * cos(particles[idx].theta)) - (obs.y * sin(particles[idx].theta)));
-			obstrans.y = particles[idx].y + ((obs.x * sin(particles[idx].theta)) + (obs.y * cos(particles[idx].theta)));
+			//if (particles[idx].theta > 0) {
+				// Counter clockwise
+				// Perform transformation
+				obstrans.x = particles[idx].x + ((obs.x * cos(particles[idx].theta)) - (obs.y * sin(particles[idx].theta)));
+				obstrans.y = particles[idx].y + ((obs.x * sin(particles[idx].theta)) + (obs.y * cos(particles[idx].theta)));
+			//}
+			//else {
+				// Clockwise
+				// Perform transformation
+				//obstrans.x = particles[idx].x + ((obs.x * cos(particles[idx].theta)) + (obs.y * sin(particles[idx].theta)));
+				//obstrans.y = particles[idx].y - ((obs.x * sin(particles[idx].theta)) + (obs.y * cos(particles[idx].theta)));
+			//}
+			
 			obstrans.id = observations[jdx].id;
 			map_observations.push_back(obstrans);
 						
@@ -206,7 +218,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
 		// Reinitialize weights before updating them
 		particles[idx].weight = 1.0;
-
+		weights[idx] = 1.0;
 		// For all observations
 		for (int jdx = 0; jdx < map_observations.size(); jdx++){
 
@@ -237,7 +249,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 		particles[idx].sense_y = sense_y;
 		// cout << "p" << idx << ": " << particles[idx].weight << endl;
 	}
-	cout << "Updated.." << endl;
+	//cout << "Updated.." << endl;
 }
 
 void ParticleFilter::resample() {
@@ -245,7 +257,7 @@ void ParticleFilter::resample() {
 	// NOTE: You may find std::discrete_distribution helpful here.
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
 
-	cout << "Resampling.." << endl;
+	//cout << "Resampling.." << endl;
 			
 	// Initialize random engine.
 	default_random_engine gen;
@@ -261,7 +273,7 @@ void ParticleFilter::resample() {
 	}
 
 	particles = resampled;
-	cout << "Resampled.." << endl;
+	//cout << "Resampled.." << endl;
 
 }
 
